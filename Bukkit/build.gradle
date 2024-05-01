@@ -2,24 +2,24 @@ repositories {
     maven { url = "https://hub.spigotmc.org/nexus/content/repositories/snapshots/" }
     maven { url = "https://jitpack.io" }
     maven { url = "https://oss.sonatype.org/content/repositories/snapshots" }
-    maven { url = "http://repo.extendedclip.com/content/repositories/placeholderapi/" }
+    maven { url = "https://repo.extendedclip.com/content/repositories/placeholderapi/" }
     mavenLocal()
 }
 
 dependencies {
     implementation(project(":Core"))
-    compile(project(":Core"))
     implementation("org.spigotmc:spigot-api:1.12.2-R0.1-SNAPSHOT")
-    implementation("net.milkbowl.vault:VaultAPI:1.7") {
+    implementation("com.github.MilkBowl:VaultAPI:1.7.1") {
         exclude module: 'bukkit'
     }
-    implementation("me.clip:placeholderapi:2.10.9")
+    implementation("me.clip:placeholderapi:2.11.5")
 }
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+sourceCompatibility = 17
+targetCompatibility = 17
 
 processResources {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
     from("src/main/resources") {
         include "plugin.yml"
         expand(
@@ -32,23 +32,29 @@ processResources {
 //noinspection GroovyAssignabilityCheck
 jar.archiveFileName = "plotsquared-bukkitapi-${project.parent.version}.jar"
 jar.destinationDirectory = file("../mvn/com/plotsquared/plotsquared-bukkitapi/" + project.parent.version)
-task createPom {
-    doLast {
-        pom {
-            project {
-                groupId = rootProject.group
-                artifactId = "plotsquared-bukkitapi"
-                version = rootProject.version
+
+publishing {
+    publications {
+        createPom(MavenPublication) {
+            groupId = rootProject.group
+            artifactId = "plotsquared-bukkitapi"
+            version = rootProject.version
+
+            pom.withXml {
+                asNode().appendNode('distributionManagement').appendNode('repository').appendNode('id', 'internal.repo')
+                asNode().appendNode('distributionManagement').appendNode('repository').appendNode('url', "../mvn/com/plotsquared/plotsquared-bukkitapi/${project.parent.version}/plotsquared-bukkitapi-${project.parent.version}.pom")
             }
-        }.writeTo("../mvn/com/plotsquared/plotsquared-bukkitapi/${project.parent.version}/plotsquared-bukkitapi-${project.parent.version}.pom")
-        pom {
-            project {
-                groupId = "com.plotsquared"
-                artifactId = "plotsquared-bukkitapi"
-                version = "latest"
+        }
+        createPomLatest(MavenPublication) {
+            groupId = "com.plotsquared"
+            artifactId = "plotsquared-bukkitapi"
+            version = "latest"
+
+            pom.withXml {
+                asNode().appendNode('distributionManagement').appendNode('repository').appendNode('id', 'internal.repo')
+                asNode().appendNode('distributionManagement').appendNode('repository').appendNode('url', "../mvn/com/plotsquared/plotsquared-bukkitapi/latest/plotsquared-bukkitapi-latest.pom")
             }
-        }.writeTo("../mvn/com/plotsquared/plotsquared-bukkitapi/latest/plotsquared-bukkitapi-latest.pom")
-         .writeTo("pom.xml")
+        }
     }
 }
 
@@ -67,8 +73,8 @@ shadowJar {
     dependencies {
         include(dependency(":Core"))
     }
-    archiveName = "${parent.name}-${project.name}-${parent.version}.jar"
-    destinationDir = file "../target"
+    archiveFileName = "${parent.name}-${project.name}-${parent.version}.jar"
+    getDestinationDirectory().set(file("../target"))
 }
 
 shadowJar.doLast {
@@ -78,4 +84,4 @@ shadowJar.doLast {
 
 build.dependsOn(shadowJar)
 build.finalizedBy(copyFiles)
-copyFiles.dependsOn(createPom)
+copyFiles.dependsOn('publish')

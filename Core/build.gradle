@@ -1,14 +1,15 @@
 dependencies {
-    testCompile 'junit:junit:4.13.2'
-    compile 'org.yaml:snakeyaml:1.26'
-    compile 'com.google.code.gson:gson:2.8.6'
-    compileOnly 'org.jetbrains:annotations:20.1.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.11.0-M1'
+    implementation 'org.yaml:snakeyaml:2.2'
+    implementation 'com.google.code.gson:gson:2.10.1'
+    implementation 'org.jetbrains:annotations:24.1.0'
 }
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+sourceCompatibility = 17
+targetCompatibility = 17
 
 processResources {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
     from("src/main/resources") {
         include "plugin.properties"
         expand(
@@ -21,22 +22,30 @@ processResources {
 //noinspection GroovyAssignabilityCheck
 jar.archiveFileName = "plotsquared-api-${project.parent.version}.jar"
 jar.destinationDirectory = file("../mvn/com/plotsquared/plotsquared-api/" + project.parent.version)
-task createPom {
-    pom {
-        project {
+
+publishing {
+    publications {
+        createPom(MavenPublication) {
             groupId = rootProject.group
-            artifactId = "plotsquared-api"
+            artifactId = "plotsquared-bukkitapi"
             version = rootProject.version
+
+            pom.withXml {
+                asNode().appendNode('distributionManagement').appendNode('repository').appendNode('id', 'internal.repo')
+                asNode().appendNode('distributionManagement').appendNode('repository').appendNode('url', "../mvn/com/plotsquared/plotsquared-bukkitapi/${project.parent.version}/plotsquared-bukkitapi-${project.parent.version}.pom")
+            }
         }
-    }.writeTo("../mvn/com/plotsquared/plotsquared-api/${project.parent.version}/plotsquared-api-${project.parent.version}.pom")
-    pom {
-        project {
-            groupId = rootProject.group
-            artifactId = "plotsquared-api"
+        createPomLatest(MavenPublication) {
+            groupId = "com.plotsquared"
+            artifactId = "plotsquared-bukkitapi"
             version = "latest"
+
+            pom.withXml {
+                asNode().appendNode('distributionManagement').appendNode('repository').appendNode('id', 'internal.repo')
+                asNode().appendNode('distributionManagement').appendNode('repository').appendNode('url', "../mvn/com/plotsquared/plotsquared-bukkitapi/latest/plotsquared-bukkitapi-latest.pom")
+            }
         }
-    }.writeTo("../mvn/com/plotsquared/plotsquared-api/latest/plotsquared-api-latest.pom")
-     .writeTo("pom.xml")
+    }
 }
 
 task copyFiles {
@@ -51,4 +60,4 @@ task copyFiles {
 }
 
 build.finalizedBy(copyFiles)
-copyFiles.dependsOn(createPom)
+copyFiles.dependsOn('publish')

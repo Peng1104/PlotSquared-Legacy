@@ -7,18 +7,18 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.github.jengelman.gradle.plugins:shadow:5.2.0'
+        classpath "com.github.johnrengelman:shadow:8.1.1"
     }
-    configurations.all {
+    configurations.configureEach {
         resolutionStrategy {
-            force 'org.ow2.asm:asm:8.0.1'
+            force 'org.ow2.asm:asm:9.7'
         }
     }
 }
 
 plugins {
     id 'maven-publish'
-    id "org.ajoberstar.grgit" version "4.1.0"
+    id "org.ajoberstar.grgit" version "5.0.0-rc.3"
 }
 
 group = 'com.intellectualcrafters'
@@ -27,6 +27,7 @@ def rootVersion = "3"
 def revision = ""
 def buildNumber = ""
 def date = ""
+
 ext {
     git = Grgit.open(dir: new File(rootDir.toString() + '/.git'))
     date = git.head().getDate().format("yy.MM.dd")
@@ -53,7 +54,7 @@ if (project.hasProperty("lzNoVersion")) { // gradle build -PlzNoVersion
 
 subprojects {
     apply plugin: 'java'
-    apply plugin: 'maven'
+    apply plugin: 'maven-publish'
     apply plugin: 'eclipse'
     apply plugin: 'idea'
     apply plugin: 'com.github.johnrengelman.shadow'
@@ -63,23 +64,25 @@ subprojects {
     }
 
     dependencies {
-        compile(group: 'com.sk89q.worldedit', name: 'worldedit-core', version: '6.1.3-SNAPSHOT') {
+        implementation(group: 'com.sk89q.worldedit', name: 'worldedit-core', version: '6.1.3-SNAPSHOT') {
             exclude(module: 'bukkit-classloader-check')
             exclude(module: 'mockito-core')
             exclude(module: 'dummypermscompat')
         }
-        compile 'com.google.guava:guava:21.0'
+        implementation 'com.google.guava:guava:33.1.0-jre'
     }
+
     repositories {
         mavenCentral()
         maven { url "https://maven.enginehub.org/repo/" }
     }
 }
+
 task aggregatedJavadocs(type: Javadoc, description: 'Generate javadocs from all child projects as if it was a single project', group: 'Documentation') {
     destinationDir = file("./docs/javadoc")
     title = "$project.name $version API"
     options.author true
-    options.links 'http://docs.spring.io/spring/docs/4.3.x/javadoc-api/', 'http://docs.oracle.com/javase/8/docs/api/', 'http://docs.spring.io/spring-ws/docs/2.3.0.RELEASE/api/', 'http://docs.spring.io/spring-security/site/docs/4.0.4.RELEASE/apidocs/'
+    options.links 'http://docs.spring.io/spring/docs/4.3.x/javadoc-api/', 'http://docs.oracle.com/javase/17/docs/api/', 'http://docs.spring.io/spring-ws/docs/2.3.0.RELEASE/api/', 'http://docs.spring.io/spring-security/site/docs/4.0.4.RELEASE/apidocs/'
     options.addStringOption('Xdoclint:none', '-quiet')
 
     delete "./docs"
