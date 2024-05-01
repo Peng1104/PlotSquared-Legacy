@@ -107,14 +107,14 @@ public class PS{
         this.translationFile =
                 MainUtil.getFile(this.IMP.getDirectory(), Settings.Paths.TRANSLATIONS + File.separator + IMP.getPluginName() + ".use_THIS.yml");
         C.load(this.translationFile);
-
+        
         // Setup manager
         if (Settings.Enabled_Components.WORLDS) {
             this.manager = new SinglePlotAreaManager();
         } else {
             this.manager = new DefaultPlotAreaManager();
         }
-
+        
         // Database
         if (Settings.Enabled_Components.DATABASE) {
             setupDatabase();
@@ -180,18 +180,18 @@ public class PS{
                     if (Settings.Enabled_Components.COMMANDS) {
                         new WE_Anywhere();
                     }
-
+                    
                 }
             } catch (Throwable e) {
                 PS.debug("Incompatible version of WorldEdit, please upgrade: http://builds.enginehub.org/job/worldedit?branch=master");
             }
         }
-
+        
         // Economy
         if (Settings.Enabled_Components.ECONOMY) {
             TaskManager.runTask(EconHandler::getEconHandler);
         }
-
+        
         // World generators:
         final ConfigurationSection section = this.worlds.getConfigurationSection("worlds");
         if (section != null) {
@@ -217,7 +217,7 @@ public class PS{
                 }
             }, 1);
         }
-
+        
         // Copy files
         copyFile("automerge.js", Settings.Paths.SCRIPTS);
         copyFile("town.template", Settings.Paths.TEMPLATES);

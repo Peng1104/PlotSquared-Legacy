@@ -1,8 +1,8 @@
 dependencies {
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.11.0-M1'
-    implementation 'org.yaml:snakeyaml:2.2'
-    implementation 'com.google.code.gson:gson:2.10.1'
-    implementation 'org.jetbrains:annotations:24.1.0'
+    testCompileOnly 'org.junit.jupiter:junit-jupiter-api:5.11.0-M1'
+    compileOnly 'org.yaml:snakeyaml:1.26'
+    compileOnly 'com.google.code.gson:gson:2.10.1'
+    compileOnly 'org.jetbrains:annotations:24.1.0'
 }
 
 sourceCompatibility = 17

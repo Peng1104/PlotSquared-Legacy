@@ -43,6 +43,7 @@ public enum C {
     FLAG_TAMED_INTERACT("tamed-interact", "static.flags"),
     FLAG_DISABLE_PHYSICS("disable-physics", "static.flags"),
     FLAG_MOB_PLACE("mob-place", "static.flags"),
+    FLAG_DOOR("door", "static.flags"),
     /*
      * Static permission
      */

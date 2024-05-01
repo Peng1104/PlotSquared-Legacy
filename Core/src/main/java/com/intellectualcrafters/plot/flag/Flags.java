@@ -90,6 +90,7 @@ public final class Flags {
     public static final BooleanFlag PVP = new BooleanFlag("pvp");
     public static final BooleanFlag PVE = new BooleanFlag("pve");
     public static final BooleanFlag NO_WORLDEDIT = new BooleanFlag("no-worldedit");
+    public static final BooleanFlag DOOR = new BooleanFlag("door");
     public static final IntegerFlag MISC_CAP = new IntegerFlag("misc-cap");
     public static final IntegerFlag ENTITY_CAP = new IntegerFlag("entity-cap");
     public static final IntegerFlag MOB_CAP = new IntegerFlag("mob-cap");

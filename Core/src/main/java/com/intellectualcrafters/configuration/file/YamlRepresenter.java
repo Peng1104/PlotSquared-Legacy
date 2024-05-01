@@ -3,7 +3,6 @@ package com.intellectualcrafters.configuration.file;
 import com.intellectualcrafters.configuration.ConfigurationSection;
 import com.intellectualcrafters.configuration.serialization.ConfigurationSerializable;
 import com.intellectualcrafters.configuration.serialization.ConfigurationSerialization;
-import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.nodes.Node;
 import org.yaml.snakeyaml.representer.Representer;
 
@@ -13,7 +12,6 @@ import java.util.Map;
 class YamlRepresenter extends Representer {
 
     YamlRepresenter() {
-        super(new DumperOptions());
         this.multiRepresenters.put(ConfigurationSection.class, new RepresentConfigurationSection());
         this.multiRepresenters.put(ConfigurationSerializable.class, new RepresentConfigurationSerializable());
     }

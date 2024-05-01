@@ -8,6 +8,7 @@ repositories {
 
 dependencies {
     implementation(project(":Core"))
+    compileOnly(project(":Core"))
     implementation("org.spigotmc:spigot-api:1.12.2-R0.1-SNAPSHOT")
     implementation("com.github.MilkBowl:VaultAPI:1.7.1") {
         exclude module: 'bukkit'
@@ -20,6 +21,7 @@ targetCompatibility = 17
 
 processResources {
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
+
     from("src/main/resources") {
         include "plugin.yml"
         expand(

@@ -352,11 +352,12 @@ public class Config {
      * @throws NoSuchFieldException
      * @throws IllegalAccessException
      */
-    private static void setAccessible(Field field) throws NoSuchFieldException, IllegalAccessException {
+    public static void setAccessible(Field field) throws NoSuchFieldException, IllegalAccessException {
         field.setAccessible(true);
 //        Field modifiersField = Field.class.getDeclaredField("modifiers");
 //        modifiersField.setAccessible(true);
-//        modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
+//        int newModifiers = field.getModifiers() & ~Modifier.FINAL;
+//        modifiersField.setInt(field, newModifiers);
     }
 
     /**
