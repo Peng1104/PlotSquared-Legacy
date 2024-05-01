@@ -28,6 +28,7 @@ import com.intellectualcrafters.plot.util.expiry.ExpireManager;
 import com.intellectualcrafters.plot.util.expiry.ExpiryTask;
 import com.plotsquared.listener.WESubscriber;
 import com.sk89q.worldedit.WorldEdit;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
 import java.net.MalformedURLException;
@@ -70,8 +71,9 @@ public class PS{
      // Temporary hold the plots/clusters before the worlds load
     public HashMap<String, Set<PlotCluster>> clusters_tmp;
     public HashMap<String, HashMap<PlotId, Plot>> plots_tmp;
-
-    private PlotAreaManager manager;
+    
+    @NotNull
+    private final PlotAreaManager manager;
 
     /**
      * Initialize PlotSquared with the desired Implementation class.
@@ -84,152 +86,151 @@ public class PS{
         this.IMP = iPlotMain;
         this.logger = iPlotMain;
         Settings.PLATFORM = platform;
+        
+        new ReflectionUtils(this.IMP.getNMSPackage());
+        
         try {
-            new ReflectionUtils(this.IMP.getNMSPackage());
+            URL url = PS.class.getProtectionDomain().getCodeSource().getLocation();
+            this.jarFile = new File(new URL(url.toURI().toString().split("\\!")[0].replaceAll("jar:file", "file")).toURI().getPath());
+        } catch (MalformedURLException | URISyntaxException | SecurityException e) {
+            e.printStackTrace();
+            this.jarFile = new File(this.IMP.getDirectory().getParentFile(), "PlotSquared.jar");
+            if (!this.jarFile.exists()) {
+                this.jarFile = new File(this.IMP.getDirectory().getParentFile(), "PlotSquared-" + platform + ".jar");
+            }
+        }
+        if (getJavaVersion() < 1.8) {
+            PS.log(C.CONSOLE_JAVA_OUTDATED.f(IMP.getPluginName()));
+        }
+        TaskManager.IMP = this.IMP.getTaskManager();
+        setupConfigs();
+        this.translationFile =
+                MainUtil.getFile(this.IMP.getDirectory(), Settings.Paths.TRANSLATIONS + File.separator + IMP.getPluginName() + ".use_THIS.yml");
+        C.load(this.translationFile);
+
+        // Setup manager
+        if (Settings.Enabled_Components.WORLDS) {
+            this.manager = new SinglePlotAreaManager();
+        } else {
+            this.manager = new DefaultPlotAreaManager();
+        }
+
+        // Database
+        if (Settings.Enabled_Components.DATABASE) {
+            setupDatabase();
+        }
+        // Comments
+        CommentManager.registerDefaultInboxes();
+        // Kill entities
+        if (Settings.Enabled_Components.KILL_ROAD_MOBS || Settings.Enabled_Components.KILL_ROAD_VEHICLES) {
+            this.IMP.runEntityTask();
+        }
+        if (Settings.Enabled_Components.EVENTS) {
+            this.IMP.registerPlayerEvents();
+            this.IMP.registerInventoryEvents();
+            this.IMP.registerPlotPlusEvents();
+        }
+        // Required
+        this.IMP.registerWorldEvents();
+        if (Settings.Enabled_Components.CHUNK_PROCESSOR) {
+            this.IMP.registerChunkProcessor();
+        }
+        // create UUIDWrapper
+        UUIDHandler.implementation = this.IMP.initUUIDHandler();
+        if (Settings.Enabled_Components.UUID_CACHE) {
+            startUuidCatching();
+        } else {
+            // Start these separately
+            UUIDHandler.add(new StringWrapper("*"), DBFunc.everyone);
+            startExpiryTasks();
+            startPlotMeConversion();
+        }
+        // create event util class
+        EventUtil.manager = this.IMP.initEventUtil();
+        // create Hybrid utility class
+        HybridUtils.manager = this.IMP.initHybridUtils();
+        // Inventory utility class
+        InventoryUtil.manager = this.IMP.initInventoryUtil();
+        // create setup util class
+        SetupUtils.manager = this.IMP.initSetupUtils();
+        // World Util
+        WorldUtil.IMP = this.IMP.initWorldUtil();
+        // Set block
+        GlobalBlockQueue.IMP = new GlobalBlockQueue(IMP.initBlockQueue(), 1);
+        GlobalBlockQueue.IMP.runTask();
+        // Set chunk
+        ChunkManager.manager = this.IMP.initChunkManager();
+        // Schematic handler
+        SchematicHandler.manager = this.IMP.initSchematicHandler();
+        // Titles
+        AbstractTitle.TITLE_CLASS = this.IMP.initTitleManager();
+        // Chat
+        ChatManager.manager = this.IMP.initChatManager();
+        // Commands
+        if (Settings.Enabled_Components.COMMANDS) {
+            this.IMP.registerCommands();
+        }
+        // WorldEdit
+        if (Settings.Enabled_Components.WORLDEDIT_RESTRICTIONS) {
             try {
-                URL url = PS.class.getProtectionDomain().getCodeSource().getLocation();
-                this.jarFile = new File(new URL(url.toURI().toString().split("\\!")[0].replaceAll("jar:file", "file")).toURI().getPath());
-            } catch (MalformedURLException | URISyntaxException | SecurityException e) {
-                e.printStackTrace();
-                this.jarFile = new File(this.IMP.getDirectory().getParentFile(), "PlotSquared.jar");
-                if (!this.jarFile.exists()) {
-                    this.jarFile = new File(this.IMP.getDirectory().getParentFile(), "PlotSquared-" + platform + ".jar");
-                }
-            }
-            if (getJavaVersion() < 1.8) {
-                PS.log(C.CONSOLE_JAVA_OUTDATED.f(IMP.getPluginName()));
-            }
-            TaskManager.IMP = this.IMP.getTaskManager();
-            setupConfigs();
-            this.translationFile =
-                    MainUtil.getFile(this.IMP.getDirectory(), Settings.Paths.TRANSLATIONS + File.separator + IMP.getPluginName() + ".use_THIS.yml");
-            C.load(this.translationFile);
-
-            // Setup manager
-            if (Settings.Enabled_Components.WORLDS) {
-                this.manager = new SinglePlotAreaManager();
-            } else {
-                this.manager = new DefaultPlotAreaManager();
-            }
-
-            // Database
-            if (Settings.Enabled_Components.DATABASE) {
-                setupDatabase();
-            }
-            // Comments
-            CommentManager.registerDefaultInboxes();
-            // Kill entities
-            if (Settings.Enabled_Components.KILL_ROAD_MOBS || Settings.Enabled_Components.KILL_ROAD_VEHICLES) {
-                this.IMP.runEntityTask();
-            }
-            if (Settings.Enabled_Components.EVENTS) {
-                this.IMP.registerPlayerEvents();
-                this.IMP.registerInventoryEvents();
-                this.IMP.registerPlotPlusEvents();
-            }
-            // Required
-            this.IMP.registerWorldEvents();
-            if (Settings.Enabled_Components.CHUNK_PROCESSOR) {
-                this.IMP.registerChunkProcessor();
-            }
-            // create UUIDWrapper
-            UUIDHandler.implementation = this.IMP.initUUIDHandler();
-            if (Settings.Enabled_Components.UUID_CACHE) {
-                startUuidCatching();
-            } else {
-                // Start these separately
-                UUIDHandler.add(new StringWrapper("*"), DBFunc.everyone);
-                startExpiryTasks();
-                startPlotMeConversion();
-            }
-            // create event util class
-            EventUtil.manager = this.IMP.initEventUtil();
-            // create Hybrid utility class
-            HybridUtils.manager = this.IMP.initHybridUtils();
-            // Inventory utility class
-            InventoryUtil.manager = this.IMP.initInventoryUtil();
-            // create setup util class
-            SetupUtils.manager = this.IMP.initSetupUtils();
-            // World Util
-            WorldUtil.IMP = this.IMP.initWorldUtil();
-            // Set block
-            GlobalBlockQueue.IMP = new GlobalBlockQueue(IMP.initBlockQueue(), 1);
-            GlobalBlockQueue.IMP.runTask();
-            // Set chunk
-            ChunkManager.manager = this.IMP.initChunkManager();
-            // Schematic handler
-            SchematicHandler.manager = this.IMP.initSchematicHandler();
-            // Titles
-            AbstractTitle.TITLE_CLASS = this.IMP.initTitleManager();
-            // Chat
-            ChatManager.manager = this.IMP.initChatManager();
-            // Commands
-            if (Settings.Enabled_Components.COMMANDS) {
-                this.IMP.registerCommands();
-            }
-            // WorldEdit
-            if (Settings.Enabled_Components.WORLDEDIT_RESTRICTIONS) {
-                try {
-                    if (this.IMP.initWorldEdit()) {
-                        PS.debug(IMP.getPluginName() + " hooked into WorldEdit.");
-                        this.worldedit = WorldEdit.getInstance();
-                        WorldEdit.getInstance().getEventBus().register(new WESubscriber());
-                        if (Settings.Enabled_Components.COMMANDS) {
-                            new WE_Anywhere();
-                        }
-
+                if (this.IMP.initWorldEdit()) {
+                    PS.debug(IMP.getPluginName() + " hooked into WorldEdit.");
+                    this.worldedit = WorldEdit.getInstance();
+                    WorldEdit.getInstance().getEventBus().register(new WESubscriber());
+                    if (Settings.Enabled_Components.COMMANDS) {
+                        new WE_Anywhere();
                     }
-                } catch (Throwable e) {
-                    PS.debug("Incompatible version of WorldEdit, please upgrade: http://builds.enginehub.org/job/worldedit?branch=master");
+
+                }
+            } catch (Throwable e) {
+                PS.debug("Incompatible version of WorldEdit, please upgrade: http://builds.enginehub.org/job/worldedit?branch=master");
+            }
+        }
+
+        // Economy
+        if (Settings.Enabled_Components.ECONOMY) {
+            TaskManager.runTask(EconHandler::getEconHandler);
+        }
+
+        // World generators:
+        final ConfigurationSection section = this.worlds.getConfigurationSection("worlds");
+        if (section != null) {
+            for (String world : section.getKeys(false)) {
+                if (world.equals("CheckingPlotSquaredGenerator")) {
+                    continue;
+                }
+                if (WorldUtil.IMP.isWorld(world)) {
+                    this.IMP.setGenerator(world);
                 }
             }
-
-            // Economy
-            if (Settings.Enabled_Components.ECONOMY) {
-                TaskManager.runTask(EconHandler::getEconHandler);
-            }
-
-            // World generators:
-            final ConfigurationSection section = this.worlds.getConfigurationSection("worlds");
-            if (section != null) {
+            TaskManager.runTaskLater(() -> {
                 for (String world : section.getKeys(false)) {
                     if (world.equals("CheckingPlotSquaredGenerator")) {
                         continue;
                     }
-                    if (WorldUtil.IMP.isWorld(world)) {
-                        this.IMP.setGenerator(world);
+                    if (!WorldUtil.IMP.isWorld(world) && !world.equals("*")) {
+                        debug("&c`" + world + "` was not properly loaded - " + IMP.getPluginName() + " will now try to load it properly: ");
+                        debug("&8 - &7Are you trying to delete this world? Remember to remove it from the settings.yml, bukkit.yml and multiverse worlds.yml");
+                        debug("&8 - &7Your world management plugin may be faulty (or non existent)");
+                        PS.this.IMP.setGenerator(world);
                     }
                 }
-                TaskManager.runTaskLater(() -> {
-                    for (String world : section.getKeys(false)) {
-                        if (world.equals("CheckingPlotSquaredGenerator")) {
-                            continue;
-                        }
-                        if (!WorldUtil.IMP.isWorld(world) && !world.equals("*")) {
-                            debug("&c`" + world + "` was not properly loaded - " + IMP.getPluginName() + " will now try to load it properly: ");
-                            debug("&8 - &7Are you trying to delete this world? Remember to remove it from the settings.yml, bukkit.yml and multiverse worlds.yml");
-                            debug("&8 - &7Your world management plugin may be faulty (or non existent)");
-                            PS.this.IMP.setGenerator(world);
-                        }
-                    }
-                }, 1);
-            }
-
-            // Copy files
-            copyFile("automerge.js", Settings.Paths.SCRIPTS);
-            copyFile("town.template", Settings.Paths.TEMPLATES);
-            copyFile("skyblock.template", Settings.Paths.TEMPLATES);
-            copyFile("bridge.template", Settings.Paths.TEMPLATES);
-            copyFile("de-DE.yml", Settings.Paths.TRANSLATIONS);
-            copyFile("es-ES.yml", Settings.Paths.TRANSLATIONS);
-            copyFile("zh-CN.yml", Settings.Paths.TRANSLATIONS);
-            copyFile("it-IT.yml", Settings.Paths.TRANSLATIONS);
-            copyFile("ko-KR.yml", Settings.Paths.TRANSLATIONS);
-            copyFile("fr-FR.yml", Settings.Paths.TRANSLATIONS);
-            showDebug();
-        } catch (Throwable e) {
-            e.printStackTrace();
+            }, 1);
         }
+
+        // Copy files
+        copyFile("automerge.js", Settings.Paths.SCRIPTS);
+        copyFile("town.template", Settings.Paths.TEMPLATES);
+        copyFile("skyblock.template", Settings.Paths.TEMPLATES);
+        copyFile("bridge.template", Settings.Paths.TEMPLATES);
+        copyFile("de-DE.yml", Settings.Paths.TRANSLATIONS);
+        copyFile("es-ES.yml", Settings.Paths.TRANSLATIONS);
+        copyFile("zh-CN.yml", Settings.Paths.TRANSLATIONS);
+        copyFile("it-IT.yml", Settings.Paths.TRANSLATIONS);
+        copyFile("ko-KR.yml", Settings.Paths.TRANSLATIONS);
+        copyFile("fr-FR.yml", Settings.Paths.TRANSLATIONS);
+        showDebug();
+        
         PS.log(C.ENABLED.f(IMP.getPluginName()));
     }
 

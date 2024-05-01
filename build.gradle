@@ -70,11 +70,16 @@ subprojects {
             exclude(module: 'dummypermscompat')
         }
         implementation 'com.google.guava:guava:33.1.0-jre'
+        implementation 'org.yaml:snakeyaml:2.2'
     }
 
     repositories {
         mavenCentral()
         maven { url "https://maven.enginehub.org/repo/" }
+    }
+
+    shadowJar {
+        relocate('org.yaml', 'com.intellectualcrafters.yaml')
     }
 }
 
